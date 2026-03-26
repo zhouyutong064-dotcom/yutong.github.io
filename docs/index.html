@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coupang 广告数据智能分析工具</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="js/splash.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- ========== 开屏动画 ========== -->
+<div class="splash-screen" id="splashScreen">
+  <!-- 背景粒子 -->
+  <canvas class="splash-canvas" id="splashCanvas"></canvas>
+
+  <!-- 中央内容 -->
+  <div class="splash-center">
+    <div class="splash-logo">
+      <div class="splash-logo-ring ring1"></div>
+      <div class="splash-logo-ring ring2"></div>
+      <div class="splash-logo-ring ring3"></div>
+      <div class="splash-logo-icon">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <defs>
+            <linearGradient id="splashGrad" x1="0" y1="0" x2="40" y2="40">
+              <stop offset="0%" stop-color="#60A5FA"/>
+              <stop offset="100%" stop-color="#A78BFA"/>
+            </linearGradient>
+          </defs>
+          <path d="M10 20 L20 8 L30 20 L20 32 Z" fill="url(#splashGrad)" opacity="0.9"/>
+          <circle cx="20" cy="20" r="5" fill="white"/>
+        </svg>
+      </div>
+    </div>
+
+    <h1 class="splash-title">Coupang <span class="splash-highlight">广告分析</span></h1>
+    <p class="splash-desc">智能识别 · 精准优化 · 专业洞察</p>
+
+    <!-- 泡泡按钮 -->
+    <button class="splash-btn" id="splashBtn">
+      <span class="splash-btn-ripple"></span>
+      <span class="splash-btn-ripple delay1"></span>
+      <span class="splash-btn-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+      </span>
+      <span class="splash-btn-text">开启智能广告分析</span>
+    </button>
+
+    <!-- 浮动泡泡装饰 -->
+    <div class="splash-bubbles">
+      <div class="bubble b1">📈</div>
+      <div class="bubble b2">🎯</div>
+      <div class="bubble b3">💡</div>
+      <div class="bubble b4">🚀</div>
+      <div class="bubble b5">⚡</div>
+      <div class="bubble b6">🔍</div>
+    </div>
+  </div>
+
+  <!-- 底部标签 -->
+  <div class="splash-footer">
+    <span class="splash-tag">DeepSeek AI</span>
+    <span class="splash-tag">豆包大模型</span>
+    <span class="splash-tag">智能广告优化</span>
+  </div>
+</div>
+
+<!-- ========== 主应用界面 ========== -->
+<div class="app-wrapper" id="appWrapper" style="display:none">
+
+<!-- 全局装饰：顶部彩虹光晕 -->
+<div class="global-glow"></div>
+
+
+
+<!-- 顶部导航 -->
+<header class="navbar">
+  <div class="navbar-brand">
+    <div class="brand-icon">
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+        <rect width="30" height="30" rx="8" fill="url(#navGrad)"/>
+        <defs><linearGradient id="navGrad" x1="0" y1="0" x2="30" y2="30"><stop offset="0%" stop-color="#3B82F6"/><stop offset="100%" stop-color="#6366F1"/></linearGradient></defs>
+        <path d="M8 15 L14 9 L22 15 L14 21 Z" fill="white" opacity="0.95"/>
+        <circle cx="14" cy="15" r="3" fill="white"/>
+      </svg>
+    </div>
+    <span class="brand-name">Coupang <span class="brand-highlight">广告分析</span></span>
+  </div>
+
+  <nav class="navbar-nav">
+    <a href="#" class="nav-item active" data-view="upload">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      上传报告
+    </a>
+    <a href="#" class="nav-item" data-view="analysis" id="nav-analysis">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      数据分析
+    </a>
+    <a href="#" class="nav-item" data-view="insights" id="nav-insights">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      非强相关词
+    </a>
+    <a href="#" class="nav-item" data-view="ai-insight" id="nav-ai-insight">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      AI 优化建议
+    </a>
+    <a href="#" class="nav-item" data-view="charts" id="nav-charts">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      可视化图表
+    </a>
+    <a href="#" class="nav-item" data-view="settings">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      系统设置
+    </a>
+  </nav>
+
+  <div class="navbar-right">
+    <div class="status-indicator">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">就绪</span>
+    </div>
+  </div>
+</header>
+
+<!-- 主内容区 -->
+<main class="main-content">
+
+  <!-- ===== 视图1：上传 ===== -->
+  <div class="view active" id="view-upload">
+
+    <div class="upload-hero" id="uploadHero">
+      <h1 class="hero-title">广告数据 <span class="gradient-text">智能分析</span></h1>
+      <p class="hero-subtitle">上传 Coupang 广告报告，AI 自动识别高效词 / 无效词 / 非强相关词，专业广告经理视角深度分析，精准优化广告投放</p>
+    </div>
+
+    <div class="upload-card" id="uploadCard">
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-icon">
+          <div class="drop-icon-inner">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+        </div>
+        <h3 class="drop-title">拖拽 xlsx 文件至此</h3>
+        <p class="drop-subtitle">或 <span class="link-text" id="browseBtn">点击选择文件</span></p>
+        <p class="drop-hint">支持 Coupang 广告后台导出的标准报告格式（.xlsx）</p>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+      </div>
+
+      <div class="upload-progress" id="uploadProgress" style="display:none">
+        <div class="file-info-bar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span id="fileName" class="file-name-text">--</span>
+          <button class="btn-reupload" id="btnReupload">重新上传</button>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <p id="progressText" class="progress-text">解析中...</p>
+      </div>
+    </div>
+
+    <!-- 上传成功提示条（上传后显示） -->
+    <div class="upload-success-bar" id="uploadSuccessBar" style="display:none">
+      <div class="usb-icon">✅</div>
+      <div class="usb-info">
+        <span class="usb-filename" id="usbFileName">报告已加载</span>
+        <span class="usb-meta" id="usbMeta">正在分析...</span>
+      </div>
+      <button class="usb-reupload" id="btnReupload2">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        重新上传
+      </button>
+    </div>
+
+    <!-- 统计卡片（上传后显示） -->
+    <div class="stats-row" id="statsRow" style="display:none">
+
+      <div class="stat-card stat-clickable" id="statCardTotal" title="点击查看全部关键词">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#3B82F6,#6366F1)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">总关键词</span>
+          <span class="stat-value" id="stat-total">--</span>
+        </div>
+        <div class="stat-arrow">›</div>
+      </div>
+      <div class="stat-card stat-clickable" id="statCardEfficient" title="点击查看高效词">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#10B981,#059669)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">高效词</span>
+          <span class="stat-value text-green" id="stat-efficient">--</span>
+        </div>
+        <div class="stat-arrow">›</div>
+      </div>
+      <div class="stat-card stat-clickable" id="statCardInvalid" title="点击查看无效词">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#EF4444,#F97316)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">无效词</span>
+          <span class="stat-value text-red" id="stat-invalid">--</span>
+        </div>
+        <div class="stat-arrow">›</div>
+      </div>
+      <div class="stat-card stat-clickable" id="statCardMeaningless" title="点击查看无意义词">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#9CA3AF,#6B7280)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">无意义词</span>
+          <span class="stat-value text-gray" id="stat-meaningless">--</span>
+        </div>
+        <div class="stat-arrow">›</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#F59E0B,#EF4444)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">总花费</span>
+          <span class="stat-value text-orange" id="stat-spend">--</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#6366F1,#8B5CF6)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">整体广告回报率</span>
+          <span class="stat-value" id="stat-roas">--</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#06B6D4,#0EA5E9)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">总订单(14天)</span>
+          <span class="stat-value" id="stat-orders">--</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#10B981,#0D9488)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M15 15l6.39-6.39"/><path d="M8 8l-6 6"/><path d="M12 2v20"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">整体点击率</span>
+          <span class="stat-value" id="stat-ctr">--</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">整体转化率</span>
+          <span class="stat-value" id="stat-cvr">--</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#F97316,#EF4444)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">单次点击成本</span>
+          <span class="stat-value" id="stat-cpc">--</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#EF4444,#DC2626)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">🚨 转化异常词</span>
+          <span class="stat-value text-red" id="stat-anomaly">--</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#0EA5E9,#6366F1)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">搜索出单占比</span>
+          <span class="stat-value" id="stat-search-rate">--</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 广告活动分组卡片 -->
+    <div id="campaignSection" style="display:none">
+      <div class="section-header">
+        <h2 class="section-title-text">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+          广告活动明细
+        </h2>
+        <span class="campaign-count-badge" id="campaignCountBadge">0 个活动</span>
+      </div>
+      <div class="campaign-grid" id="campaignGrid"></div>
+    </div>
+
+    <!-- 底部固定操作栏（固定在浏览器底部） -->
+    <div class="action-row action-row-fixed" id="actionRow" style="display:none">
+      <button class="btn btn-primary" id="btnViewAnalysis">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        查看分析结果
+      </button>
+      <button class="btn btn-insight" id="btnViewInsights">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        非强相关词
+      </button>
+      <button class="btn btn-chart" id="btnViewCharts">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        查看图表
+      </button>
+      <button class="btn btn-ai" id="btnAiAnalyze">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        AI 智能分析
+      </button>
+      <button class="btn btn-negative" id="btnNegativeListTop">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        否词清单
+        <span class="badge-count" id="negativeCountTop">0</span>
+      </button>
+      <button class="btn btn-export" id="btnExport">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        导出 Excel
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ===== 视图2：数据分析表格 ===== -->
+  <div class="view" id="view-analysis">
+    <!-- 筛选工具栏 -->
+    <div class="filter-bar">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label class="filter-label">广告活动</label>
+          <select id="filterCampaign" class="filter-select">
+            <option value="">全部活动</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">分类筛选</label>
+          <select id="filterLabel" class="filter-select">
+            <option value="">全部分类</option>
+            <option value="efficient">✅ 高效词</option>
+            <option value="inefficient">⚡ 低效词</option>
+            <option value="invalid">❌ 无效词</option>
+            <option value="meaningless">💤 无意义</option>
+            <option value="anomaly">⚠️ 异常词</option>
+            <option value="perfect">🚨 转化异常</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">AI建议</label>
+          <select id="filterAction" class="filter-select">
+            <option value="">全部建议</option>
+            <option value="increase">📈 加价</option>
+            <option value="decrease">📉 降价</option>
+            <option value="delete">🚫 否词/删除</option>
+            <option value="observe">👁 观察</option>
+            <option value="maintain">✅ 保持</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">广告类型</label>
+          <select id="filterAdType" class="filter-select">
+            <option value="">全部类型</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">区域类型</label>
+          <select id="filterArea" class="filter-select">
+            <option value="">全部区域</option>
+            <option value="search">🔍 搜索区域</option>
+            <option value="nonsearch">📦 非搜索区域</option>
+          </select>
+        </div>
+        <div class="filter-group filter-search">
+          <label class="filter-label">关键词搜索</label>
+          <div class="search-input-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="filterKeyword" class="filter-input" placeholder="输入关键词...">
+          </div>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">花费范围</label>
+          <select id="filterSpend" class="filter-select">
+            <option value="">不限</option>
+            <option value="gt0">有花费</option>
+            <option value="gt1000">≥ 1K₩</option>
+            <option value="gt10000">≥ 10K₩</option>
+            <option value="gt50000">≥ 50K₩</option>
+          </select>
+        </div>
+        <button class="btn-copy-keywords" id="btnCopyKeywords" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          复制关键词
+          <span class="badge-count" id="copyKwCount">0</span>
+        </button>
+        <button class="btn-negative-list" id="btnNegativeList">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          否词清单
+          <span class="badge-count" id="negativeCount">0</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="table-wrapper">
+      <table class="data-table" id="dataTable">
+        <thead>
+          <tr>
+            <th class="sortable" data-col="keyword">关键词/区域</th>
+            <th class="col-campaign">广告活动</th>
+            <th class="sortable" data-col="impressions">曝光</th>
+            <th class="sortable" data-col="clicks">点击</th>
+            <th class="sortable" data-col="spend">花费(₩)</th>
+            <th class="sortable" data-col="ctrCalc">点击率%</th>
+            <th class="sortable" data-col="cvr">转化率%</th>
+            <th class="sortable" data-col="cpc">点击成本(₩)</th>
+            <th class="sortable" data-col="orders14d">订单(14天)</th>
+            <th class="sortable" data-col="roas">广告回报率%</th>
+            <th class="sortable" data-col="acos">广告费率%</th>
+            <th>分类</th>
+            <th>特殊标记</th>
+            <th>AI建议</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="14" class="empty-state">请先上传报告文件</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 分页 -->
+    <div class="pagination" id="pagination">
+      <button class="page-btn" id="prevPage">‹ 上一页</button>
+      <span class="page-info" id="pageInfo">第 1 / 1 页</span>
+      <button class="page-btn" id="nextPage">下一页 ›</button>
+      <span class="page-size-info" id="pageSizeInfo"></span>
+    </div>
+  </div>
+
+  <!-- ===== 关键词详情侧边栏（点击行弹出）===== -->
+  <div class="kw-detail-panel" id="kwDetailPanel" style="display:none">
+    <div class="kw-detail-backdrop" id="kwDetailBackdrop"></div>
+    <div class="kw-detail-content">
+      <div class="kw-detail-header">
+        <h3 id="kwDetailTitle">关键词详情</h3>
+        <button class="kw-detail-close" id="kwDetailClose">✕</button>
+      </div>
+      <div class="kw-detail-body" id="kwDetailBody">
+        <!-- 动态填充 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 视图3：非强相关词筛查 ===== -->
+  <div class="view" id="view-insights">
+    <div class="insights-container">
+
+      <!-- 非强相关词面板 -->
+      <div class="insight-section" id="irrelevantSection">
+        <div class="insight-section-header">
+          <div class="insight-icon irrelevant">🎯</div>
+          <div>
+            <h2 class="insight-title">非强相关词筛查</h2>
+            <p class="insight-desc">关键词与广告商品名关联度较弱，可能消耗无效预算，建议重点审查并添加为否词</p>
+          </div>
+          <span class="insight-badge badge-warning" id="irrelevantCount">0</span>
+        </div>
+        <!-- 非强相关词独立活动筛选 -->
+        <div class="irrel-filter-bar">
+          <div class="filter-group">
+            <label class="filter-label">按广告活动筛选</label>
+            <select id="insightIrrelFilterCampaign" class="filter-select">
+              <option value="">全部活动</option>
+            </select>
+          </div>
+          <button class="btn btn-sm btn-export-irrel" id="btnCopyIrrelevant" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            仅复制关键词
+          </button>
+          <button class="btn btn-sm btn-add-negative-irrel" id="btnAddIrrelToNegative" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            一键加入否词清单
+          </button>
+        </div>
+        <div id="irrelevantKeywordsList" class="insight-list">
+          <p class="empty-state">暂无数据，请先上传报告</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== 视图3.5：AI 整体优化建议 ===== -->
+  <div class="view" id="view-ai-insight">
+    <div class="ai-insight-container">
+      <div class="ai-insight-header">
+        <div class="ai-insight-title-row">
+          <h2>🤖 AI 整体优化建议</h2>
+          <span class="ai-model-badge-large" id="aiInsightModelBadge">DeepSeek</span>
+        </div>
+        <p class="ai-insight-subtitle">基于广告活动维度的深度分析，专业广告经理视角</p>
+        <button class="btn btn-ai btn-ai-run" id="btnAiAnalyze2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+          运行 AI 分析
+        </button>
+      </div>
+
+      <!-- 加载中 -->
+      <div id="aiInsightLoading" class="ai-insight-loading" style="display:none">
+        <div class="ai-loading-spinner"></div>
+        <div class="ai-loading-text">
+          <p>AI 正在深度分析广告数据，约需 20-60 秒...</p>
+          <p class="ai-loading-sub">正在按广告活动维度构建分析模型</p>
+        </div>
+      </div>
+
+      <!-- 空状态 -->
+      <div id="aiInsightEmpty" class="ai-insight-empty">
+        <div class="ai-insight-empty-icon">🤖</div>
+        <p>点击上方「运行 AI 分析」按钮，即可获取专业的广告优化建议</p>
+        <p class="ai-insight-empty-sub">需要先上传报告并配置 API Key（系统设置页）</p>
+      </div>
+
+      <!-- 分析结果 -->
+      <div id="aiInsightResult" style="display:none">
+
+        <!-- 整体诊断总结 -->
+        <div class="ai-section ai-section-overall">
+          <div class="ai-section-title">
+            <span class="ai-section-icon">📊</span>
+            <h3>整体账户诊断</h3>
+          </div>
+          <p class="ai-overall-summary" id="aiOverallSummary"></p>
+          <div class="ai-three-cols" id="aiIssuesActions">
+            <div class="ai-col">
+              <h4>⚠️ 核心问题</h4>
+              <ul id="aiTopIssuesList"></ul>
+            </div>
+            <div class="ai-col">
+              <h4>⚡ 立即执行</h4>
+              <ul id="aiImmediateActionsList"></ul>
+            </div>
+            <div class="ai-col">
+              <h4>📈 ROAS 改善路径</h4>
+              <p id="aiRoasImprovement"></p>
+            </div>
+          </div>
+          <div class="ai-budget-block" id="aiBudgetBlock" style="display:none">
+            <h4>💰 预算分配建议</h4>
+            <p id="aiBudgetAdviceText"></p>
+          </div>
+        </div>
+
+        <!-- 广告活动维度分析 -->
+        <div class="ai-section" id="aiCampaignAnalysisSection" style="display:none">
+          <div class="ai-section-title">
+            <span class="ai-section-icon">📁</span>
+            <h3>广告活动维度分析</h3>
+          </div>
+          <div id="aiCampaignAnalysisList" class="ai-campaign-list"></div>
+        </div>
+
+        <!-- 优先处理关键词 -->
+        <div class="ai-section" id="aiTopPrioritySection" style="display:none">
+          <div class="ai-section-title">
+            <span class="ai-section-icon">🔥</span>
+            <h3>优先处理关键词</h3>
+          </div>
+          <div id="aiTopPriorityList" class="ai-priority-list"></div>
+        </div>
+
+        <!-- 关键词操作建议列表 -->
+        <div class="ai-section" id="aiKwSuggestionsSection" style="display:none">
+          <div class="ai-section-title">
+            <span class="ai-section-icon">📋</span>
+            <h3>关键词操作建议</h3>
+            <span class="ai-kw-count" id="aiKwCount"></span>
+          </div>
+          <!-- 按广告活动折叠展示 -->
+          <div id="aiKwSuggestionsList" class="ai-kw-list"></div>
+        </div>
+
+      </div><!-- end aiInsightResult -->
+    </div>
+  </div>
+
+  <!-- ===== 视图4：可视化图表 ===== -->
+  <div class="view" id="view-charts">
+
+    <!-- 图表页头部 -->
+    <div class="chart-page-header">
+      <div class="chart-page-title-wrap">
+        <h2 class="chart-page-title">
+          <span class="chart-title-icon">📊</span>
+          可视化数据洞察
+        </h2>
+        <p class="chart-page-subtitle">多维度图表分析，快速把握广告投放全貌</p>
+      </div>
+      <div class="chart-filter-bar">
+        <div class="filter-group">
+          <label class="filter-label">按广告活动筛选</label>
+          <select id="chartFilterCampaign" class="filter-select">
+            <option value="">全部活动</option>
+          </select>
+        </div>
+        <button class="btn btn-sm btn-secondary" id="btnRefreshCharts">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+          刷新图表
+        </button>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card full-width">
+        <div class="chart-header">
+          <div class="chart-header-left">
+            <span class="chart-card-badge">🏆 TOP 关键词</span>
+            <h3 class="chart-section-title">关键词性能对比</h3>
+          </div>
+          <div class="chart-controls">
+            <button class="chart-btn active" data-metric="spend">花费</button>
+            <button class="chart-btn" data-metric="clicks">点击</button>
+            <button class="chart-btn" data-metric="roas">广告回报率</button>
+            <button class="chart-btn" data-metric="cvr">转化率</button>
+            <button class="chart-btn" data-metric="cpc">点击成本</button>
+          </div>
+        </div>
+        <div id="chart-line" class="chart-container"></div>
+      </div>
+      <div class="chart-card half-width">
+        <div class="chart-header">
+          <div class="chart-header-left">
+            <span class="chart-card-badge">🎯 分类分布</span>
+            <h3 class="chart-section-title">关键词分类占比</h3>
+          </div>
+        </div>
+        <div id="chart-pie-label" class="chart-container"></div>
+      </div>
+      <div class="chart-card half-width">
+        <div class="chart-header">
+          <div class="chart-header-left">
+            <span class="chart-card-badge">💰 ROI 分析</span>
+            <h3 class="chart-section-title">广告花费 vs 销售额</h3>
+          </div>
+        </div>
+        <div id="chart-pie-order" class="chart-container"></div>
+      </div>
+      <div class="chart-card full-width">
+        <div class="chart-header">
+          <div class="chart-header-left">
+            <span class="chart-card-badge">📋 广告类型</span>
+            <h3 class="chart-section-title">广告类型对比分析</h3>
+          </div>
+        </div>
+        <div id="chart-bar-adtype" class="chart-container"></div>
+      </div>
+      <div class="chart-card full-width">
+        <div class="chart-header">
+          <div class="chart-header-left">
+            <span class="chart-card-badge">⚠️ 亏损预警</span>
+            <h3 class="chart-section-title">商品亏损分析</h3>
+          </div>
+        </div>
+        <div id="chart-bar-losing" class="chart-container"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== 视图5：系统设置 ===== -->
+  <div class="view" id="view-settings">
+    <div class="settings-container">
+      <h2 class="settings-page-title">系统设置</h2>
+
+      <!-- AI 模型配置 -->
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <div class="settings-card-icon" style="background:linear-gradient(135deg,#6366F1,#8B5CF6)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+          </div>
+          <div>
+            <h3 class="settings-card-title">AI 模型配置</h3>
+            <p class="settings-card-desc">选择 AI 模型并填写对应的 API Key</p>
+          </div>
+        </div>
+
+        <div class="model-select-row">
+          <label class="form-label">选择 AI 模型</label>
+          <div class="model-select-wrap">
+            <select id="modelSelect" class="model-select-dropdown">
+              <option value="deepseek">🔷 DeepSeek — DeepSeek-V3 · 高精度推理</option>
+              <option value="doubao">🟠 豆包 (Doubao) — doubao-pro-32k · 火山引擎</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="api-key-item" id="apiKeyDeepseek">
+          <label class="form-label">
+            <span class="model-tag model-tag-ds">DeepSeek</span>
+            API Key
+          </label>
+          <div class="key-input-row">
+            <input type="password" id="key-deepseek" class="key-input" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx">
+            <button class="key-toggle-btn" onclick="toggleKeyVisibility('deepseek')" title="显示/隐藏">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <a href="https://platform.deepseek.com/api_keys" target="_blank" class="get-key-link">→ 前往获取 DeepSeek API Key</a>
+        </div>
+
+        <div class="api-key-item" id="apiKeyDoubao">
+          <label class="form-label">
+            <span class="model-tag model-tag-db">豆包</span>
+            API Key
+          </label>
+          <div class="key-input-row">
+            <input type="password" id="key-doubao" class="key-input" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+            <button class="key-toggle-btn" onclick="toggleKeyVisibility('doubao')" title="显示/隐藏">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <a href="https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey" target="_blank" class="get-key-link">→ 前往获取豆包 API Key</a>
+        </div>
+
+        <button class="btn btn-primary" id="btnSaveApiKeys">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          保存 API Key
+        </button>
+      </div>
+
+      <!-- 分析阈值 -->
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <div class="settings-card-icon" style="background:linear-gradient(135deg,#F59E0B,#EF4444)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+          </div>
+          <div>
+            <h3 class="settings-card-title">分析阈值配置</h3>
+            <p class="settings-card-desc">自定义高效词 / 无效词的判定标准</p>
+          </div>
+        </div>
+
+        <div class="threshold-grid">
+          <div class="threshold-item">
+            <label class="threshold-label">无效词：花费阈值（₩）</label>
+            <input type="number" id="th-invalidSpendNoClick" class="threshold-input" value="1000">
+            <span class="threshold-hint">花费 ≥ 此值 且 0 点击 → 无效词</span>
+          </div>
+          <div class="threshold-item">
+            <label class="threshold-label">无效词：点击阈值（次）</label>
+            <input type="number" id="th-invalidClickNoConv" class="threshold-input" value="10">
+            <span class="threshold-hint">点击 ≥ 此值 且 0 转化 → 无效词</span>
+          </div>
+          <div class="threshold-item">
+            <label class="threshold-label">无效词：高花费阈值（₩）</label>
+            <input type="number" id="th-invalidSpendNoOrder" class="threshold-input" value="20000">
+            <span class="threshold-hint">花费 ≥ 此值 且 0 订单 → 无效词</span>
+          </div>
+          <div class="threshold-item">
+            <label class="threshold-label">高效词：广告回报率 阈值（%）</label>
+            <input type="number" id="th-efficientRoas" class="threshold-input" value="500">
+            <span class="threshold-hint">广告回报率 &gt; 此值 → 高效词加分</span>
+          </div>
+          <div class="threshold-item">
+            <label class="threshold-label">高效词：点击率 阈值（%）</label>
+            <input type="number" id="th-efficientCtr" class="threshold-input" value="0.3" step="0.1">
+            <span class="threshold-hint">点击率 &gt; 此值 → 高效词加分</span>
+          </div>
+          <div class="threshold-item">
+            <label class="threshold-label">高效词：转化率 阈值（%）</label>
+            <input type="number" id="th-efficientCvr" class="threshold-input" value="3">
+            <span class="threshold-hint">转化率 &gt; 此值 → 高效词加分</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary" id="btnSaveThresholds">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          保存阈值配置
+        </button>
+      </div>
+
+      <!-- 使用说明 -->
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <div class="settings-card-icon" style="background:linear-gradient(135deg,#10B981,#059669)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div>
+            <h3 class="settings-card-title">使用说明</h3>
+            <p class="settings-card-desc">快速上手指南</p>
+          </div>
+        </div>
+        <div class="guide-steps">
+          <div class="guide-step">
+            <div class="step-num">1</div>
+            <div>
+              <h4 class="step-title">上传报告</h4>
+              <p class="step-desc">从 Coupang 广告后台下载广告报告（xlsx 格式），拖拽或点击上传</p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="step-num">2</div>
+            <div>
+              <h4 class="step-title">查看分析</h4>
+              <p class="step-desc">系统自动计算 CTR/CVR/CPC/ROAS/ACoS，并对关键词进行高效/低效/无效/无意义分类</p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="step-num">3</div>
+            <div>
+              <h4 class="step-title">非强相关词筛查</h4>
+              <p class="step-desc">查看非强相关词筛查，一键添加否词，精准清理无效流量</p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="step-num">4</div>
+            <div>
+              <h4 class="step-title">AI 优化建议（可选）</h4>
+              <p class="step-desc">配置 DeepSeek 或豆包 API Key，获取广告活动维度的专业优化方案，AI建议否词自动同步到否词清单</p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="step-num">5</div>
+            <div>
+              <h4 class="step-title">导出结果</h4>
+              <p class="step-desc">一键导出包含分析结果的 Excel，直接复制否词清单到广告后台</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ========== 否词清单弹窗 ========== -->
+<div class="modal-overlay" id="negativeModal" style="display:none">
+  <div class="modal-box neg-modal-box">
+    <!-- 弹窗顶部 -->
+    <div class="modal-header neg-modal-header">
+      <div class="neg-modal-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        否词清单
+      </div>
+      <div class="modal-header-right">
+        <button class="btn btn-primary btn-sm" id="btnCopyNegative">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          复制当前分类
+        </button>
+        <button class="modal-close-btn" id="negativeModalClose">✕</button>
+      </div>
+    </div>
+
+    <!-- Tab 切换栏 -->
+    <div class="neg-tabs">
+      <button class="neg-tab active" data-tab="rule">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        规则判定
+        <span class="neg-tab-count" id="negTabCountRule">0</span>
+      </button>
+      <button class="neg-tab" data-tab="ai">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        AI 建议
+        <span class="neg-tab-count neg-tab-count-ai" id="negTabCountAI">0</span>
+      </button>
+      <button class="neg-tab" data-tab="irrel">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        非强相关词
+        <span class="neg-tab-count neg-tab-count-irrel" id="negTabCountIrrel">0</span>
+      </button>
+    </div>
+
+    <!-- 筛选栏 -->
+    <div class="neg-filter-bar">
+      <div class="filter-group">
+        <label class="filter-label">按广告活动筛选</label>
+        <select id="negFilterCampaign" class="filter-select">
+          <option value="">全部活动</option>
+        </select>
+      </div>
+      <span class="neg-current-desc" id="negCurrentDesc">系统根据规则自动识别的否词候选</span>
+    </div>
+
+    <!-- 列表内容区 -->
+    <div class="modal-body" id="negativeListContent">
+      <p class="empty-state">暂无否词数据</p>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 广告活动详情弹窗 ========== -->
+<div class="modal-overlay" id="campaignModal" style="display:none">
+  <div class="modal-box modal-box-wide">
+    <div class="modal-header">
+      <h3 id="campaignModalTitle">广告活动详情</h3>
+      <button class="modal-close-btn" id="campaignModalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="campaign-detail-stats" id="campaignDetailStats"></div>
+      <div class="table-wrapper mt-16">
+        <table class="data-table" id="campaignDetailTable">
+          <thead>
+            <tr>
+              <th>关键词/区域</th>
+              <th>曝光</th>
+              <th>点击</th>
+              <th>花费(₩)</th>
+              <th>点击率%</th>
+              <th>转化率%</th>
+              <th>点击成本(₩)</th>
+              <th>订单(14天)</th>
+              <th>广告回报率%</th>
+              <th>特殊标记</th>
+              <th>分类</th>
+            </tr>
+          </thead>
+          <tbody id="campaignDetailBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 统计卡片详情弹窗 ========== -->
+<div class="modal-overlay" id="statDetailModal" style="display:none">
+  <div class="modal-box modal-box-wide">
+    <div class="modal-header">
+      <h3 id="statDetailTitle">详情</h3>
+      <button class="modal-close-btn" id="statDetailModalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="table-wrapper">
+        <table class="data-table" id="statDetailTable">
+          <thead>
+            <tr>
+              <th>关键词/区域</th>
+              <th>广告活动</th>
+              <th>花费(₩)</th>
+              <th>点击</th>
+              <th>点击率%</th>
+              <th>转化率%</th>
+              <th>订单(14天)</th>
+              <th>广告回报率%</th>
+              <th>特殊标记</th>
+              <th>分类</th>
+            </tr>
+          </thead>
+          <tbody id="statDetailBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Toast 通知 ========== -->
+<div class="toast" id="toast"></div>
+
+</div><!-- end app-wrapper -->
+
+<!-- ========== 前端脚本 ========== -->
+<!-- SheetJS：本地 xlsx 解析（前端直接解析，不上传服务器） -->
+<script src="js/xlsx.full.min.js"></script>
+<!-- 前端分析引擎（parser + calculator + classifier） -->
+<script src="js/engine.js"></script>
+<!-- GitHub Pages 版：前端直调 AI API（DeepSeek/豆包） -->
+<script src="js/ai-frontend.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/table.js"></script>
+<script src="js/exporter.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
