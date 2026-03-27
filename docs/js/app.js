@@ -44,6 +44,9 @@
     if (viewName === 'insights' && G.data) {
       renderInsights(G.data);
     }
+    if (viewName === 'losing' && G.data) {
+      renderLosingProducts(G.data.losingProducts || []);
+    }
     if (viewName === 'ai-insight') {
       // 切换到AI视图时，如果还没分析过，显示引导
       const aiInsightResult = document.getElementById('aiInsightResult');
@@ -169,9 +172,9 @@
     }
   }
 
-  // ---- 填充广告活动下拉（图表 + 洞察）----
+  // ---- 填充广告活动下拉（图表 + 洞察 + 亏损商品）----
   function fillCampaignDropdowns(campaigns) {
-    const selectors = ['#chartFilterCampaign', '#insightFilterCampaign', '#insightIrrelFilterCampaign'];
+    const selectors = ['#chartFilterCampaign', '#insightFilterCampaign', '#insightIrrelFilterCampaign', '#losingFilterCampaign'];
     selectors.forEach(sel => {
       const el = document.querySelector(sel);
       if (!el) return;
@@ -1159,6 +1162,7 @@
     // 操作按钮
     document.getElementById('btnViewAnalysis')?.addEventListener('click', () => switchView('analysis'));
     document.getElementById('btnViewInsights')?.addEventListener('click', () => switchView('insights'));
+    document.getElementById('btnViewLosing')?.addEventListener('click', () => switchView('losing'));
     document.getElementById('btnViewCharts')?.addEventListener('click', () => switchView('charts'));
     document.getElementById('btnAiAnalyze')?.addEventListener('click', () => {
       switchView('ai-insight');
@@ -1248,6 +1252,18 @@
     // 刷新图表
     document.getElementById('btnRefreshCharts')?.addEventListener('click', () => {
       if (G.data) renderChartsWithFilter();
+    });
+
+    // 亏损商品广告活动筛选
+    document.getElementById('losingFilterCampaign')?.addEventListener('change', e => {
+      if (!G.data) return;
+      const campFilter = e.target.value;
+      if (campFilter) {
+        const camp = (G.data.campaigns || []).find(c => c.id === campFilter);
+        renderLosingProducts(camp?.losingProducts || []);
+      } else {
+        renderLosingProducts(G.data.losingProducts || []);
+      }
     });
 
     // 洞察广告活动筛选（整体洞察）
