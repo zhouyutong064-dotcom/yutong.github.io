@@ -2,13 +2,21 @@
  * ai-frontend.js - GitHub Pages 版前端直调 AI API
  * 直接从浏览器调用 DeepSeek / 豆包 API，不经过服务器
  * 仅用于 GitHub Pages 静态版本，原版本（本地 server.js）不受影响
+ *
+ * 修复记录：
+ * - 豆包 API 改用 maas-api.cn-beijing.byteplus.com（解决 CORS 问题）
+ * - 移除 DeepSeek response_format 参数（避免部分模型 400 错误）
+ * - 增强错误提示（区分 CORS/网络/认证/余额不足等错误）
+ * - 关键词为空时自动降级使用全部词（不限 spend > 0）
  */
 (function(global) {
   'use strict';
 
   const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
   const DEEPSEEK_MODEL   = 'deepseek-chat';
+  // 豆包使用 BytePlus 国际域名（支持跨域访问，规避 CORS 问题）
   const DOUBAO_API_URL   = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+  const DOUBAO_API_URL_INTL = 'https://maas-api.cn-beijing.byteplus.com/api/v3/chat/completions';
   const DOUBAO_MODEL     = 'doubao-pro-32k-241215';
 
   function labelCN(label) {
@@ -184,54 +192,121 @@ ${kwListStr}
   }
 
   /**
+   * 统一错误解析：把 API 错误码转成中文提示
+   */
+  function parseApiError(status, errData, modelName) {
+    const msg = errData?.error?.message || errData?.message || '';
+    const code = errData?.error?.code || errData?.error?.type || '';
+
+    if (status === 401 || code === 'invalid_api_key' || msg.includes('Unauthorized') || msg.includes('authentication')) {
+      return `${modelName} API Key 无效或已过期，请在"系统设置"中重新填写正确的 Key`;
+    }
+    if (status === 402 || msg.includes('insufficient_quota') || msg.includes('quota') || msg.includes('余额')) {
+      return `${modelName} 账户余额不足，请充值后重试`;
+    }
+    if (status === 429 || msg.includes('rate_limit') || msg.includes('Too Many Requests')) {
+      return `${modelName} 请求频率超限，请稍等 30 秒后重试`;
+    }
+    if (status === 400 || msg.includes('bad request') || msg.includes('invalid')) {
+      return `${modelName} 请求参数错误（${msg || status}），请检查 Key 和模型配置`;
+    }
+    if (status >= 500) {
+      return `${modelName} 服务端暂时异常（${status}），请稍后重试`;
+    }
+    return `${modelName} API 调用失败（${status}）：${msg || '未知错误'}`;
+  }
+
+  /**
    * 前端直调 DeepSeek API（浏览器 fetch）
+   * 不使用 response_format 参数，兼容性更好
    */
   async function callDeepSeek(apiKey, prompt) {
-    const response = await fetch(DEEPSEEK_API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.2,
-        max_tokens: 8000,
-        response_format: { type: 'json_object' }
-      })
-    });
+    let response;
+    try {
+      response = await fetch(DEEPSEEK_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: DEEPSEEK_MODEL,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.2,
+          max_tokens: 8000
+          // 注意：不加 response_format，避免部分版本 400 错误；prompt 末尾已要求 JSON 格式
+        })
+      });
+    } catch (networkErr) {
+      const msg = networkErr.message || '';
+      if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('CORS')) {
+        throw new Error('网络请求失败，可能是跨域（CORS）问题或网络不通。建议：使用本地版工具，或检查网络是否能访问 api.deepseek.com');
+      }
+      throw new Error('网络请求失败：' + msg);
+    }
+
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      throw new Error(errData?.error?.message || `DeepSeek API 错误 ${response.status}`);
+      throw new Error(parseApiError(response.status, errData, 'DeepSeek'));
     }
     const data = await response.json();
-    return data.choices[0].message.content;
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) throw new Error('DeepSeek 返回了空内容，请重试');
+    return content;
   }
 
   /**
    * 前端直调豆包 API（浏览器 fetch）
+   * 自动降级：先试主域名，失败后试备用域名
    */
   async function callDoubao(apiKey, prompt) {
-    const response = await fetch(DOUBAO_API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: DOUBAO_MODEL,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.2,
-        max_tokens: 8000
-      })
-    });
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData?.error?.message || `豆包 API 错误 ${response.status}`);
+    const endpoints = [DOUBAO_API_URL, DOUBAO_API_URL_INTL];
+    let lastError;
+
+    for (const url of endpoints) {
+      let response;
+      try {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: DOUBAO_MODEL,
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.2,
+            max_tokens: 8000
+          })
+        });
+      } catch (networkErr) {
+        const msg = networkErr.message || '';
+        lastError = new Error(`豆包接口（${url}）网络请求失败（${msg}）`);
+        continue; // 尝试下一个 endpoint
+      }
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        // 如果是认证/余额/频率限制，不用尝试备用域名，直接报错
+        const status = response.status;
+        if (status === 401 || status === 402 || status === 429) {
+          throw new Error(parseApiError(status, errData, '豆包'));
+        }
+        lastError = new Error(parseApiError(status, errData, '豆包'));
+        continue;
+      }
+
+      const data = await response.json();
+      const content = data?.choices?.[0]?.message?.content;
+      if (!content) throw new Error('豆包返回了空内容，请重试');
+      return content;
     }
-    const data = await response.json();
-    return data.choices[0].message.content;
+
+    // 两个 endpoint 都失败
+    throw new Error(
+      (lastError?.message || '豆包 API 调用失败') +
+      '。\n提示：豆包 API 跨域限制较严，推荐改用 DeepSeek 在 GitHub Pages 中使用。'
+    );
   }
 
   /**
@@ -240,13 +315,23 @@ ${kwListStr}
    */
   async function analyzeAI({ model, apiKey, keywords, summary, thresholds }) {
     if (!apiKey) throw new Error('请先在"系统设置"中配置 API Key');
-    if (!keywords || keywords.length === 0) throw new Error('无关键词数据');
+    if (!keywords || keywords.length === 0) throw new Error('无关键词数据，请先上传报告文件');
 
     // 取前 40 条有花费的词（非无意义词）
-    const sample = keywords
+    let sample = keywords
       .filter(k => k.keyword && k.label !== 'meaningless' && k.spend > 0)
       .sort((a, b) => b.spend - a.spend)
       .slice(0, 40);
+
+    // 降级：如果没有花费数据，取前 40 条有关键词的数据
+    if (sample.length === 0) {
+      sample = keywords
+        .filter(k => k.keyword && k.label !== 'meaningless')
+        .slice(0, 40);
+    }
+    if (sample.length === 0) {
+      throw new Error('没有可分析的关键词数据（所有词都被标记为无意义）');
+    }
 
     const prompt = buildPrompt(sample, summary, thresholds);
 
@@ -256,7 +341,7 @@ ${kwListStr}
     } else if (model === 'doubao') {
       rawResult = await callDoubao(apiKey, prompt);
     } else {
-      throw new Error('不支持的模型: ' + model);
+      throw new Error('不支持的模型: ' + model + '，请在设置中选择 DeepSeek 或豆包');
     }
 
     const suggestions = parseAISuggestions(rawResult, sample);
