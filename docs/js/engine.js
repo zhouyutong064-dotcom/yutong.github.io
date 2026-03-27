@@ -141,6 +141,50 @@
     return { rows, totalRows: rows.length, sheetName: bestName, rawKeys };
   }
 
+  // =====================================================================
+  //  关键词去重合并：去空格后相同词（同活动+广告组维度）数据累加
+  //  数值字段求和，文本字段保留第一条，_rowIndex 保留最小值
+  // =====================================================================
+  const NUMERIC_FIELDS = [
+    'impressions','clicks','spend',
+    'orders1d','orders14d','salesAmt1d','salesAmt14d',
+    'sales1d','sales14d',
+    'directOrders1d','directOrders14d',
+    'ctr','roas1d','roas14d','directRoas1d','directRoas14d'
+  ];
+
+  function mergeByKeyword(rows) {
+    // 合并键：广告活动 + 广告组 + 关键词（去空格后已一致）
+    const map = new Map();
+    const order = []; // 保持原始行顺序
+
+    rows.forEach(row => {
+      const key = [
+        row.campaignId   || row.campaignName || '',
+        row.adGroup      || '',
+        row.keyword      || ''
+      ].join('\x00'); // 用不可见字符分隔，避免拼接歧义
+
+      if (!map.has(key)) {
+        // 第一次见到这个词：深拷贝整行作为基础
+        map.set(key, { ...row });
+        order.push(key);
+      } else {
+        // 已存在：只累加数值字段，文本字段保持不变
+        const existing = map.get(key);
+        NUMERIC_FIELDS.forEach(f => {
+          if (typeof row[f] === 'number') {
+            existing[f] = (existing[f] || 0) + row[f];
+          }
+        });
+        // _rowIndex 取最小，方便调试溯源
+        if (row._rowIndex < existing._rowIndex) existing._rowIndex = row._rowIndex;
+      }
+    });
+
+    return order.map(key => map.get(key));
+  }
+
   function groupByCampaign(rows) {
     const campaigns = {};
     rows.forEach(row => {
@@ -451,8 +495,12 @@
           // 1. 解析 xlsx
           const parsed = parseXlsxBuffer(arrayBuffer);
 
+          // 1.5 去空格后同词合并（避免去空格引入重复词）
+          const mergedRows = mergeByKeyword(parsed.rows);
+          const mergedParsed = { ...parsed, rows: mergedRows, totalRows: mergedRows.length };
+
           // 2. 计算衍生指标
-          const withMetrics = calcAll(parsed.rows);
+          const withMetrics = calcAll(mergedParsed.rows);
 
           // 3. 注入搜索区域标记
           const withArea = withMetrics.map(row => ({
@@ -500,7 +548,7 @@
           resolve({
             success:            true,
             fileName:           file.name,
-            totalRows:          parsed.totalRows,
+            totalRows:          mergedParsed.totalRows,
             summary:            globalSummary,
             rows:               classified,
             negativeList:       globalNegative,
