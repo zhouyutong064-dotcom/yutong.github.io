@@ -6,8 +6,6 @@
 <title>Coupang 广告数据智能分析工具</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="js/splash.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -115,10 +113,6 @@
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       可视化图表
     </a>
-    <a href="#" class="nav-item" data-view="settings">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-      系统设置
-    </a>
   </nav>
 
   <div class="navbar-right">
@@ -135,164 +129,301 @@
   <!-- ===== 视图1：上传 ===== -->
   <div class="view active" id="view-upload">
 
-    <div class="upload-hero" id="uploadHero">
-      <h1 class="hero-title">广告数据 <span class="gradient-text">智能分析</span></h1>
-      <p class="hero-subtitle">上传 Coupang 广告报告，AI 自动识别高效词 / 无效词 / 非强相关词，专业广告经理视角深度分析，精准优化广告投放</p>
-    </div>
+    <!-- 上传前：标题 + 三栏卡片布局 -->
+    <div id="uploadHero">
+      <div class="upload-page-header">
+        <h1 class="hero-title">广告数据 <span class="gradient-text">智能分析</span></h1>
+        <p class="hero-subtitle">上传 Coupang 广告报告，AI 自动识别高效词 / 无效词 / 非强相关词，精准优化广告投放</p>
+      </div>
 
-    <div class="upload-card" id="uploadCard">
-      <div class="drop-zone" id="dropZone">
-        <div class="drop-icon">
-          <div class="drop-icon-inner">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <!-- 上传区 -->
+      <div class="upload-panel upload-panel-main">
+        <div class="upload-panel-header">
+          <div class="upload-panel-icon" style="background:linear-gradient(135deg,#3B82F6,#6366F1)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <span class="upload-panel-title">上传报告</span>
+        </div>
+
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-icon-wrap">
+            <div class="drop-icon-circle">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+          </div>
+          <h3 class="drop-title">拖拽 xlsx 文件至此</h3>
+          <p class="drop-subtitle">或 <span class="link-text" id="browseBtn">点击选择文件</span></p>
+          <p class="drop-hint">支持 Coupang 广告后台导出的标准报告（.xlsx）</p>
+          <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+        </div>
+
+        <div class="upload-progress" id="uploadProgress" style="display:none">
+          <div class="file-info-bar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span id="fileName" class="file-name-text">--</span>
+            <button class="btn-reupload" id="btnReupload">重新上传</button>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+          <p id="progressText" class="progress-text">解析中...</p>
+        </div>
+      </div>
+
+      <!-- 配置区（上传区下方横向并排：AI配置 + 阈值配置） -->
+      <div class="upload-config-row">
+
+        <!-- AI 配置面板（直接引用系统设置的配置项） -->
+        <div class="upload-panel upload-panel-config">
+          <div class="upload-panel-header">
+            <div class="upload-panel-icon" style="background:linear-gradient(135deg,#6366F1,#8B5CF6)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+            </div>
+            <span class="upload-panel-title">AI 配置</span>
+          </div>
+
+          <div class="upload-panel-config-inner">
+            <div class="form-row-group">
+              <label class="form-label">选择 AI 模型</label>
+              <div class="model-select-wrap">
+                <select id="modelSelect" class="model-select-dropdown">
+                  <option value="deepseek">🔷 DeepSeek — DeepSeek-V3 · 高精度推理</option>
+                  <option value="doubao">🟠 豆包 (Doubao) — doubao-pro-32k · 火山引擎</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="api-key-row-2">
+              <div class="api-key-item" id="apiKeyDeepseek">
+                <label class="form-label">
+                  <span class="model-tag model-tag-ds">DeepSeek</span> API Key
+                </label>
+                <div class="key-input-row">
+                  <input type="password" id="key-deepseek" class="key-input" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx">
+                  <button class="key-toggle-btn" onclick="toggleKeyVisibility('deepseek')" title="显示/隐藏">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+                <a href="https://platform.deepseek.com/api_keys" target="_blank" class="get-key-link">→ 前往获取 DeepSeek API Key</a>
+              </div>
+              <div class="api-key-item" id="apiKeyDoubao">
+                <label class="form-label">
+                  <span class="model-tag model-tag-db">豆包</span> API Key
+                </label>
+                <div class="key-input-row">
+                  <input type="password" id="key-doubao" class="key-input" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                  <button class="key-toggle-btn" onclick="toggleKeyVisibility('doubao')" title="显示/隐藏">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+                <a href="https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey" target="_blank" class="get-key-link">→ 前往获取豆包 API Key</a>
+              </div>
+            </div>
+
+            <button class="btn btn-primary btn-sm-full" id="btnSaveApiKeys">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              保存 API Key
+            </button>
           </div>
         </div>
-        <h3 class="drop-title">拖拽 xlsx 文件至此</h3>
-        <p class="drop-subtitle">或 <span class="link-text" id="browseBtn">点击选择文件</span></p>
-        <p class="drop-hint">支持 Coupang 广告后台导出的标准报告格式（.xlsx）</p>
-        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+
+        <!-- 阈值配置面板（直接引用系统设置的配置项） -->
+        <div class="upload-panel upload-panel-config">
+          <div class="upload-panel-header">
+            <div class="upload-panel-icon" style="background:linear-gradient(135deg,#F59E0B,#EF4444)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            </div>
+            <span class="upload-panel-title">分析阈值配置</span>
+          </div>
+          <p class="upload-panel-tip">💡 可以不修改直接使用，默认值适合大多数场景</p>
+
+          <div class="upload-panel-config-inner">
+            <div class="threshold-grid">
+              <div class="threshold-item">
+                <label class="threshold-label">无效词：花费阈值（₩）</label>
+                <input type="number" id="th-invalidSpendNoClick" class="threshold-input" value="1000">
+                <span class="threshold-hint">花费 ≥ 此值 且 0 点击 → 无效词</span>
+              </div>
+              <div class="threshold-item">
+                <label class="threshold-label">无效词：点击阈值（次）</label>
+                <input type="number" id="th-invalidClickNoConv" class="threshold-input" value="10">
+                <span class="threshold-hint">点击 ≥ 此值 且 0 转化 → 无效词</span>
+              </div>
+              <div class="threshold-item">
+                <label class="threshold-label">无效词：高花费阈值（₩）</label>
+                <input type="number" id="th-invalidSpendNoOrder" class="threshold-input" value="20000">
+                <span class="threshold-hint">花费 ≥ 此值 且 0 订单 → 无效词</span>
+              </div>
+              <div class="threshold-item">
+                <label class="threshold-label">高效词：广告回报率 阈值（%）</label>
+                <input type="number" id="th-efficientRoas" class="threshold-input" value="500">
+                <span class="threshold-hint">广告回报率 &gt; 此值 → 高效词加分</span>
+              </div>
+              <div class="threshold-item">
+                <label class="threshold-label">高效词：点击率 阈值（%）</label>
+                <input type="number" id="th-efficientCtr" class="threshold-input" value="0.3" step="0.1">
+                <span class="threshold-hint">点击率 &gt; 此值 → 高效词加分</span>
+              </div>
+              <div class="threshold-item">
+                <label class="threshold-label">高效词：转化率 阈值（%）</label>
+                <input type="number" id="th-efficientCvr" class="threshold-input" value="3">
+                <span class="threshold-hint">转化率 &gt; 此值 → 高效词加分</span>
+              </div>
+            </div>
+
+            <button class="btn btn-secondary btn-sm-full" id="btnSaveThresholds">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              保存阈值配置
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /upload-config-row -->
+
+      <!-- 使用说明（独立展示，在三栏下方） -->
+      <div class="upload-guide-section">
+        <div class="upload-guide-header">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          使用说明
+        </div>
+        <div class="upload-guide-steps">
+          <div class="upload-guide-step">
+            <span class="guide-step-num">1</span>
+            <div class="guide-step-content">
+              <strong>下载并上传报告</strong>
+              <span>从 Coupang 广告后台下载 xlsx 格式报告，拖拽或点击上传</span>
+            </div>
+          </div>
+          <div class="upload-guide-step">
+            <span class="guide-step-num">2</span>
+            <div class="guide-step-content">
+              <strong>自动分析数据</strong>
+              <span>系统自动计算 CTR/CVR/CPC/ROAS，对关键词分类（高效/低效/无效/无意义）</span>
+            </div>
+          </div>
+          <div class="upload-guide-step">
+            <span class="guide-step-num">3</span>
+            <div class="guide-step-content">
+              <strong>筛查非强相关词</strong>
+              <span>查看非强相关词筛查结果，一键添加否词，清理无效流量</span>
+            </div>
+          </div>
+          <div class="upload-guide-step">
+            <span class="guide-step-num">4</span>
+            <div class="guide-step-content">
+              <strong>AI 优化建议</strong>
+              <span>配置 API Key 后，AI 自动生成广告活动维度的深度优化建议</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /uploadHero -->
+
+    <!-- 分析结果区（上传成功后显示，含标题 + 统计卡片） -->
+    <div id="resultSection" style="display:none">
+
+      <!-- 上传成功后只保留这一行标题 -->
+      <div class="result-page-header">
+        <h1 class="result-page-title">广告数据 <span class="gradient-text">智能分析</span></h1>
+        <div class="result-file-meta" id="usbMeta">正在分析...</div>
       </div>
 
-      <div class="upload-progress" id="uploadProgress" style="display:none">
-        <div class="file-info-bar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span id="fileName" class="file-name-text">--</span>
-          <button class="btn-reupload" id="btnReupload">重新上传</button>
+      <!-- 首页内嵌图表区（统计卡片上方） -->
+      <div id="homeChartsSection" style="display:none">
+        <div class="section-header" style="margin-bottom:10px">
+          <h2 class="section-title-text">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            数据图表
+          </h2>
+          <div class="home-chart-filter">
+            <label class="filter-label" style="white-space:nowrap">按广告活动</label>
+            <select id="homeChartFilterCampaign" class="filter-select" style="min-width:160px">
+              <option value="">全部活动</option>
+            </select>
+          </div>
         </div>
-        <div class="progress-bar-wrap">
-          <div class="progress-bar" id="progressBar"></div>
+        <div class="home-charts-grid">
+          <!-- 广告花费 vs 销售额 -->
+          <div class="home-chart-card">
+            <div class="home-chart-card-header">
+              <span class="home-chart-badge" style="background:linear-gradient(135deg,#6366F1,#8B5CF6)">💰 ROI 分析</span>
+              <h3 class="home-chart-title">广告花费 vs 销售额</h3>
+            </div>
+            <div id="home-chart-spend-sales" class="home-chart-container"></div>
+          </div>
+          <!-- 商品亏损分析 -->
+          <div class="home-chart-card">
+            <div class="home-chart-card-header">
+              <span class="home-chart-badge" style="background:linear-gradient(135deg,#EF4444,#F97316)">⚠️ 亏损预警</span>
+              <h3 class="home-chart-title">商品亏损分析</h3>
+            </div>
+            <div id="home-chart-losing" class="home-chart-container"></div>
+          </div>
         </div>
-        <p id="progressText" class="progress-text">解析中...</p>
       </div>
-    </div>
 
-    <!-- 上传成功提示条（上传后显示） -->
-    <div class="upload-success-bar" id="uploadSuccessBar" style="display:none">
-      <div class="usb-icon">✅</div>
-      <div class="usb-info">
-        <span class="usb-filename" id="usbFileName">报告已加载</span>
-        <span class="usb-meta" id="usbMeta">正在分析...</span>
-      </div>
-      <button class="usb-reupload" id="btnReupload2">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-        重新上传
-      </button>
-    </div>
-
-    <!-- 统计卡片（上传后显示） -->
-    <div class="stats-row" id="statsRow" style="display:none">
-
-      <div class="stat-card stat-clickable" id="statCardTotal" title="点击查看全部关键词">
-        <div class="stat-icon" style="background:linear-gradient(135deg,#3B82F6,#6366F1)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <!-- 统计卡片（精简版：只保留分类卡片 + 转化异常） -->
+      <div class="stats-row" id="statsRow">
+        <div class="stat-card stat-clickable" id="statCardSuperEfficient" title="点击查看高效词（订单≥5）">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">🏆 高效词</span>
+            <span class="stat-value text-yellow" id="stat-super-efficient">--</span>
+          </div>
+          <div class="stat-arrow">›</div>
         </div>
-        <div class="stat-info">
-          <span class="stat-label">总关键词</span>
-          <span class="stat-value" id="stat-total">--</span>
+        <div class="stat-card stat-clickable" id="statCardEfficient" title="点击查看有效词">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#10B981,#059669)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">✅ 有效词</span>
+            <span class="stat-value text-green" id="stat-efficient">--</span>
+          </div>
+          <div class="stat-arrow">›</div>
         </div>
-        <div class="stat-arrow">›</div>
-      </div>
-      <div class="stat-card stat-clickable" id="statCardEfficient" title="点击查看高效词">
-        <div class="stat-icon" style="background:linear-gradient(135deg,#10B981,#059669)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        <div class="stat-card stat-clickable" id="statCardInvalid" title="点击查看无效词">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#EF4444,#F97316)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">无效词</span>
+            <span class="stat-value text-red" id="stat-invalid">--</span>
+          </div>
+          <div class="stat-arrow">›</div>
         </div>
-        <div class="stat-info">
-          <span class="stat-label">高效词</span>
-          <span class="stat-value text-green" id="stat-efficient">--</span>
+        <div class="stat-card stat-clickable" id="statCardMeaningless" title="点击查看无意义词">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#9CA3AF,#6B7280)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">无意义词</span>
+            <span class="stat-value text-gray" id="stat-meaningless">--</span>
+          </div>
+          <div class="stat-arrow">›</div>
         </div>
-        <div class="stat-arrow">›</div>
-      </div>
-      <div class="stat-card stat-clickable" id="statCardInvalid" title="点击查看无效词">
-        <div class="stat-icon" style="background:linear-gradient(135deg,#EF4444,#F97316)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div class="stat-card stat-card-clickable" id="statCardPerfect" title="点击查看转化异常词明细">
+          <div class="stat-icon" style="background:linear-gradient(135deg,#EF4444,#DC2626)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">🚨 转化异常词</span>
+            <span class="stat-value text-red" id="stat-perfect">--</span>
+          </div>
+          <div class="stat-card-arrow">›</div>
         </div>
-        <div class="stat-info">
-          <span class="stat-label">无效词</span>
-          <span class="stat-value text-red" id="stat-invalid">--</span>
-        </div>
-        <div class="stat-arrow">›</div>
-      </div>
-      <div class="stat-card stat-clickable" id="statCardMeaningless" title="点击查看无意义词">
-        <div class="stat-icon" style="background:linear-gradient(135deg,#9CA3AF,#6B7280)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">无意义词</span>
-          <span class="stat-value text-gray" id="stat-meaningless">--</span>
-        </div>
-        <div class="stat-arrow">›</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:linear-gradient(135deg,#F59E0B,#EF4444)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">总花费</span>
-          <span class="stat-value text-orange" id="stat-spend">--</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:linear-gradient(135deg,#6366F1,#8B5CF6)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">整体广告回报率</span>
-          <span class="stat-value" id="stat-roas">--</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:linear-gradient(135deg,#06B6D4,#0EA5E9)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">总订单(14天)</span>
-          <span class="stat-value" id="stat-orders">--</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:linear-gradient(135deg,#10B981,#0D9488)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M15 15l6.39-6.39"/><path d="M8 8l-6 6"/><path d="M12 2v20"/></svg>
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">整体点击率</span>
-          <span class="stat-value" id="stat-ctr">--</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">整体转化率</span>
-          <span class="stat-value" id="stat-cvr">--</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:linear-gradient(135deg,#F97316,#EF4444)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">单次点击成本</span>
-          <span class="stat-value" id="stat-cpc">--</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:linear-gradient(135deg,#EF4444,#DC2626)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">🚨 转化异常词</span>
-          <span class="stat-value text-red" id="stat-anomaly">--</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:linear-gradient(135deg,#0EA5E9,#6366F1)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">搜索出单占比</span>
-          <span class="stat-value" id="stat-search-rate">--</span>
-        </div>
+        <!-- 兼容性：保留 id 以防 JS 引用 -->
+        <span id="stat-total" style="display:none"></span>
+        <span id="stat-spend" style="display:none"></span>
+        <span id="stat-roas" style="display:none"></span>
+        <span id="stat-orders" style="display:none"></span>
+        <span id="stat-ctr" style="display:none"></span>
+        <span id="stat-cvr" style="display:none"></span>
+        <span id="stat-cpc" style="display:none"></span>
+        <span id="stat-search-rate" style="display:none"></span>
+        <span id="usbFileName" style="display:none"></span>
       </div>
     </div>
 
@@ -358,7 +489,8 @@
           <label class="filter-label">分类筛选</label>
           <select id="filterLabel" class="filter-select">
             <option value="">全部分类</option>
-            <option value="efficient">✅ 高效词</option>
+            <option value="super_efficient">🏆 高效词</option>
+            <option value="efficient">✅ 有效词</option>
             <option value="inefficient">⚡ 低效词</option>
             <option value="invalid">❌ 无效词</option>
             <option value="meaningless">💤 无意义</option>
@@ -715,168 +847,7 @@
   </div>
 
 
-  <!-- ===== 视图5：系统设置 ===== -->
-  <div class="view" id="view-settings">
-    <div class="settings-container">
-      <h2 class="settings-page-title">系统设置</h2>
 
-      <!-- AI 模型配置 -->
-      <div class="settings-card">
-        <div class="settings-card-header">
-          <div class="settings-card-icon" style="background:linear-gradient(135deg,#6366F1,#8B5CF6)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
-          </div>
-          <div>
-            <h3 class="settings-card-title">AI 模型配置</h3>
-            <p class="settings-card-desc">选择 AI 模型并填写对应的 API Key</p>
-          </div>
-        </div>
-
-        <div class="model-select-row">
-          <label class="form-label">选择 AI 模型</label>
-          <div class="model-select-wrap">
-            <select id="modelSelect" class="model-select-dropdown">
-              <option value="deepseek">🔷 DeepSeek — DeepSeek-V3 · 高精度推理</option>
-              <option value="doubao">🟠 豆包 (Doubao) — doubao-pro-32k · 火山引擎</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="api-key-item" id="apiKeyDeepseek">
-          <label class="form-label">
-            <span class="model-tag model-tag-ds">DeepSeek</span>
-            API Key
-          </label>
-          <div class="key-input-row">
-            <input type="password" id="key-deepseek" class="key-input" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx">
-            <button class="key-toggle-btn" onclick="toggleKeyVisibility('deepseek')" title="显示/隐藏">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
-          </div>
-          <a href="https://platform.deepseek.com/api_keys" target="_blank" class="get-key-link">→ 前往获取 DeepSeek API Key</a>
-        </div>
-
-        <div class="api-key-item" id="apiKeyDoubao">
-          <label class="form-label">
-            <span class="model-tag model-tag-db">豆包</span>
-            API Key
-          </label>
-          <div class="key-input-row">
-            <input type="password" id="key-doubao" class="key-input" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
-            <button class="key-toggle-btn" onclick="toggleKeyVisibility('doubao')" title="显示/隐藏">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
-          </div>
-          <a href="https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey" target="_blank" class="get-key-link">→ 前往获取豆包 API Key</a>
-        </div>
-
-        <button class="btn btn-primary" id="btnSaveApiKeys">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          保存 API Key
-        </button>
-      </div>
-
-      <!-- 分析阈值 -->
-      <div class="settings-card">
-        <div class="settings-card-header">
-          <div class="settings-card-icon" style="background:linear-gradient(135deg,#F59E0B,#EF4444)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-          </div>
-          <div>
-            <h3 class="settings-card-title">分析阈值配置</h3>
-            <p class="settings-card-desc">自定义高效词 / 无效词的判定标准</p>
-          </div>
-        </div>
-
-        <div class="threshold-grid">
-          <div class="threshold-item">
-            <label class="threshold-label">无效词：花费阈值（₩）</label>
-            <input type="number" id="th-invalidSpendNoClick" class="threshold-input" value="1000">
-            <span class="threshold-hint">花费 ≥ 此值 且 0 点击 → 无效词</span>
-          </div>
-          <div class="threshold-item">
-            <label class="threshold-label">无效词：点击阈值（次）</label>
-            <input type="number" id="th-invalidClickNoConv" class="threshold-input" value="10">
-            <span class="threshold-hint">点击 ≥ 此值 且 0 转化 → 无效词</span>
-          </div>
-          <div class="threshold-item">
-            <label class="threshold-label">无效词：高花费阈值（₩）</label>
-            <input type="number" id="th-invalidSpendNoOrder" class="threshold-input" value="20000">
-            <span class="threshold-hint">花费 ≥ 此值 且 0 订单 → 无效词</span>
-          </div>
-          <div class="threshold-item">
-            <label class="threshold-label">高效词：广告回报率 阈值（%）</label>
-            <input type="number" id="th-efficientRoas" class="threshold-input" value="500">
-            <span class="threshold-hint">广告回报率 &gt; 此值 → 高效词加分</span>
-          </div>
-          <div class="threshold-item">
-            <label class="threshold-label">高效词：点击率 阈值（%）</label>
-            <input type="number" id="th-efficientCtr" class="threshold-input" value="0.3" step="0.1">
-            <span class="threshold-hint">点击率 &gt; 此值 → 高效词加分</span>
-          </div>
-          <div class="threshold-item">
-            <label class="threshold-label">高效词：转化率 阈值（%）</label>
-            <input type="number" id="th-efficientCvr" class="threshold-input" value="3">
-            <span class="threshold-hint">转化率 &gt; 此值 → 高效词加分</span>
-          </div>
-        </div>
-        <button class="btn btn-secondary" id="btnSaveThresholds">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          保存阈值配置
-        </button>
-      </div>
-
-      <!-- 使用说明 -->
-      <div class="settings-card">
-        <div class="settings-card-header">
-          <div class="settings-card-icon" style="background:linear-gradient(135deg,#10B981,#059669)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          </div>
-          <div>
-            <h3 class="settings-card-title">使用说明</h3>
-            <p class="settings-card-desc">快速上手指南</p>
-          </div>
-        </div>
-        <div class="guide-steps">
-          <div class="guide-step">
-            <div class="step-num">1</div>
-            <div>
-              <h4 class="step-title">上传报告</h4>
-              <p class="step-desc">从 Coupang 广告后台下载广告报告（xlsx 格式），拖拽或点击上传</p>
-            </div>
-          </div>
-          <div class="guide-step">
-            <div class="step-num">2</div>
-            <div>
-              <h4 class="step-title">查看分析</h4>
-              <p class="step-desc">系统自动计算 CTR/CVR/CPC/ROAS/ACoS，并对关键词进行高效/低效/无效/无意义分类</p>
-            </div>
-          </div>
-          <div class="guide-step">
-            <div class="step-num">3</div>
-            <div>
-              <h4 class="step-title">非强相关词筛查</h4>
-              <p class="step-desc">查看非强相关词筛查，一键添加否词，精准清理无效流量</p>
-            </div>
-          </div>
-          <div class="guide-step">
-            <div class="step-num">4</div>
-            <div>
-              <h4 class="step-title">AI 优化建议（可选）</h4>
-              <p class="step-desc">配置 DeepSeek 或豆包 API Key，获取广告活动维度的专业优化方案，AI建议否词自动同步到否词清单</p>
-            </div>
-          </div>
-          <div class="guide-step">
-            <div class="step-num">5</div>
-            <div>
-              <h4 class="step-title">导出结果</h4>
-              <p class="step-desc">一键导出包含分析结果的 Excel，直接复制否词清单到广告后台</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
 </main>
 
@@ -1007,6 +978,8 @@
 <!-- ========== 前端脚本 ========== -->
 <!-- SheetJS：本地 xlsx 解析（前端直接解析，不上传服务器） -->
 <script src="js/xlsx.full.min.js"></script>
+<!-- ECharts：图表库 -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 <!-- 前端分析引擎（parser + calculator + classifier） -->
 <script src="js/engine.js"></script>
 <!-- GitHub Pages 版：前端直调 AI API（DeepSeek/豆包） -->
