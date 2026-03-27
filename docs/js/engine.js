@@ -229,18 +229,22 @@
   //  CLASSIFIER - 分类规则引擎
   // =====================================================================
   const DEFAULT_THRESHOLDS = {
-    invalidCpcNoConv:     500,
-    invalidSpendNoClick2: 500,
-    invalidSpendNoOrder:  1000,
-    invalidClickNoConv:   10,
-    anomalyMinImpressions: 100,
-    efficientRoas:        500,
-    efficientCtr:         0.3,
-    efficientCvr:         3,
-    efficientMinOrders:   1,
-    pendingMinImpressions: 50,
-    pendingMinClicks:      3,
-    losingSpendRatio:     1.0,
+    invalidCpcNoConv:       500,   // 无效词：CPC ≥ N 且无转化
+    invalidSpendNoOrder:    1000,  // 无效词：花费 ≥ N 且无订单
+    invalidClickNoConv:     10,    // 无效词：点击 ≥ N 且无转化
+    anomalyMinImpressions:  100,   // 异常词：曝光 ≥ N 且无点击无转化
+    anomalyLowImpMaxCvr:    50,    // 异常词：曝光 ≤ N 且转化率 ≥ M%（低曝光超高转化）
+    anomalyLowImpCvrThreshold: 50, // 异常词：低曝光超高转化阈值（CVR ≥ 50%）
+    efficientRoas:          500,   // 有效词积分：ROAS > N
+    efficientCtr:           0.3,   // 有效词积分：CTR > N%
+    efficientCvr:           3,     // 有效词积分：CVR > N%
+    efficientMinOrders:     1,     // 有效词积分：订单 ≥ N
+    superEfficientOrders:   5,     // 高效词：14天订单 ≥ N（直接晋级）
+    inefficientMinClicks:   3,     // 低效词新规则：点击 ≥ N
+    inefficientMinSpend:    300,   // 低效词新规则：花费 ≥ N₩
+    pendingMinImpressions:  50,
+    pendingMinClicks:       3,
+    losingSpendRatio:       1.0,
   };
 
   function classify(row, thresholds = {}) {
@@ -248,40 +252,55 @@
     const { clicks, spend, orders14d, cvr, roas, ctrCalc, cpc, impressions, salesAmt14d, salesAmt1d } = row;
     const reasons = [];
 
-    // 无意义词
+    // 无意义词（完全无数据）
     if (clicks === 0 && spend === 0 && (impressions || 0) === 0 && orders14d === 0) {
       return { label:'meaningless', reasons:['完全无数据'], suggestion:'observe', pendingReason:null, pendingScore:null, specialMark:'meaningless' };
     }
 
     let specialMark = null;
+
+    // 异常词规则①：高曝光零点击零转化
     if ((impressions || 0) >= t.anomalyMinImpressions && clicks === 0 && orders14d === 0) {
       specialMark = 'anomaly';
     }
+    // 异常词规则②：低曝光（≤10）且转化率≥50%（数据异常）
+    if (!specialMark && (impressions || 0) <= t.anomalyLowImpMaxCvr && clicks > 0 && cvr >= t.anomalyLowImpCvrThreshold) {
+      specialMark = 'anomaly';
+    }
 
-    // 无效词规则
+    // 无效词规则（已删除：高花费无点击规则）
+    // 规则①：CPC 过高且无转化
     if (clicks > 0 && cpc != null && cpc >= t.invalidCpcNoConv && (orders14d === 0 || cvr === 0)) {
       reasons.push(`单次点击花费 ${Math.round(cpc)}₩（≥${t.invalidCpcNoConv}₩）且转化率为 0`);
       return { label:'invalid', reasons, suggestion:'delete', pendingReason:null, specialMark };
     }
-    if (spend >= t.invalidSpendNoClick2 && clicks <= 1) {
-      reasons.push(`花费 ${spend}₩（≥${t.invalidSpendNoClick2}₩）但仅 ${clicks} 次点击`);
-      return { label:'invalid', reasons, suggestion:'delete', pendingReason:null, specialMark };
-    }
+    // 规则②：高花费无订单
     if (spend >= t.invalidSpendNoOrder && (orders14d === 0 || cvr === 0)) {
       reasons.push(`花费 ${spend}₩（≥${t.invalidSpendNoOrder}₩）且转化率为 0`);
       return { label:'invalid', reasons, suggestion:'delete', pendingReason:null, specialMark };
     }
+    // 规则③：多次点击无转化
     if (clicks >= t.invalidClickNoConv && orders14d === 0) {
       reasons.push(`${clicks} 次点击无任何转化`);
       return { label:'invalid', reasons, suggestion:'delete', pendingReason:null, specialMark };
     }
 
-    // 转化率100%异常
+    // 转化率100%异常标记
     if (clicks > 0 && orders14d >= clicks) {
       specialMark = 'perfect';
     }
 
-    // 高效词
+    // ── 高效词（新规则）：14天订单 ≥ 5，直接判定为高效词 ──
+    if (orders14d >= t.superEfficientOrders) {
+      return {
+        label: 'super_efficient',
+        reasons: [`14天订单 ${orders14d} 单（≥${t.superEfficientOrders} 单）`],
+        suggestion: roas > 800 ? 'increase' : 'maintain',
+        pendingReason: null, specialMark
+      };
+    }
+
+    // ── 有效词（原高效词改名）：积分制 ≥ 3分 ──
     let efficientScore = 0;
     const efficientReasons = [];
     if (roas > t.efficientRoas)            { efficientScore += 2; efficientReasons.push(`广告回报率 ${roas?.toFixed(0)}% 超阈值`); }
@@ -294,10 +313,21 @@
     }
 
     // 低效词
+    // 新规则：点击 ≥ 3 且 花费 ≥ 300₩ 且 订单 = 0
+    if (clicks >= t.inefficientMinClicks && spend >= t.inefficientMinSpend && orders14d === 0) {
+      const suggestion = ctrCalc > t.efficientCtr ? 'decrease' : 'delete';
+      return {
+        label: 'inefficient',
+        reasons: [`${clicks} 次点击、花费 ${Math.round(spend)}₩ 但 0 转化`],
+        suggestion, pendingReason: null, specialMark
+      };
+    }
+    // 原规则：有点击无转化
     if (clicks > 0 && orders14d === 0) {
       const suggestion = ctrCalc > t.efficientCtr ? 'decrease' : 'delete';
       return { label:'inefficient', reasons:[`${clicks} 次点击、0 转化`], suggestion, pendingReason:null, specialMark };
     }
+    // 原规则：有转化但 ROAS 过低
     if (orders14d > 0 && roas < 200) {
       return { label:'inefficient', reasons:[`广告回报率仅 ${roas?.toFixed(0)}%，广告效率低`], suggestion:'decrease', pendingReason:null, specialMark };
     }
@@ -451,14 +481,15 @@
   }
 
   function getSummary(rows) {
-    const summary = { efficient:0, inefficient:0, invalid:0, meaningless:0, anomaly:0, perfect:0, total:rows.length };
+    const summary = { super_efficient:0, efficient:0, inefficient:0, invalid:0, meaningless:0, anomaly:0, perfect:0, total:rows.length };
     rows.forEach(r => {
-      if (r.label === 'efficient')   summary.efficient++;
-      if (r.label === 'inefficient') summary.inefficient++;
-      if (r.label === 'invalid')     summary.invalid++;
-      if (r.label === 'meaningless') summary.meaningless++;
-      if (r.specialMark === 'anomaly') summary.anomaly++;
-      if (r.specialMark === 'perfect') summary.perfect++;
+      if (r.label === 'super_efficient') summary.super_efficient++;
+      if (r.label === 'efficient')       summary.efficient++;
+      if (r.label === 'inefficient')     summary.inefficient++;
+      if (r.label === 'invalid')         summary.invalid++;
+      if (r.label === 'meaningless')     summary.meaningless++;
+      if (r.specialMark === 'anomaly')   summary.anomaly++;
+      if (r.specialMark === 'perfect')   summary.perfect++;
     });
     summary.totalSpend       = rows.reduce((s, r) => s + (r.spend       || 0), 0);
     summary.totalOrders      = rows.reduce((s, r) => s + (r.orders14d   || 0), 0);
