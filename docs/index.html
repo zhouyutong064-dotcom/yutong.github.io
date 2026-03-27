@@ -99,6 +99,10 @@
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
       数据分析
     </a>
+    <a href="#" class="nav-item" data-view="losing" id="nav-losing">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      亏损商品
+    </a>
     <a href="#" class="nav-item" data-view="insights" id="nav-insights">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
       非强相关词
@@ -314,6 +318,10 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         非强相关词
       </button>
+      <button class="btn btn-losing" id="btnViewLosing">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        亏损商品
+      </button>
       <button class="btn btn-chart" id="btnViewCharts">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         查看图表
@@ -459,6 +467,34 @@
       </div>
       <div class="kw-detail-body" id="kwDetailBody">
         <!-- 动态填充 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 视图2.5：亏损商品 ===== -->
+  <div class="view" id="view-losing">
+    <div class="insights-container">
+      <div class="insight-section" id="losingSection">
+        <div class="insight-section-header">
+          <div class="insight-icon losing">⚠️</div>
+          <div>
+            <h2 class="insight-title">亏损商品分析</h2>
+            <p class="insight-desc">花费超过销售额的商品广告，存在亏损风险，建议优先排查并调整出价策略</p>
+          </div>
+          <span class="insight-badge badge-danger" id="losingCount">0</span>
+        </div>
+        <!-- 亏损商品广告活动筛选 -->
+        <div class="irrel-filter-bar">
+          <div class="filter-group">
+            <label class="filter-label">按广告活动筛选</label>
+            <select id="losingFilterCampaign" class="filter-select">
+              <option value="">全部活动</option>
+            </select>
+          </div>
+        </div>
+        <div id="losingProductsList" class="insight-list">
+          <p class="empty-state">暂无数据，请先上传报告</p>
+        </div>
       </div>
     </div>
   </div>
