@@ -113,27 +113,25 @@
 
       // 渲染统计卡片
       renderStats(result.summary);
-      document.getElementById('statsRow').style.display = 'grid';
       document.getElementById('actionRow').style.display = 'flex';
       document.body.classList.add('has-action-bar');
 
-      // 显示上传成功条
-      const successBar = document.getElementById('uploadSuccessBar');
-      const usbFileName = document.getElementById('usbFileName');
+      // 上传成功后：隐藏配置区，显示结果区（只保留标题+统计卡片）
+      const uploadHero = document.getElementById('uploadHero');
+      const resultSection = document.getElementById('resultSection');
       const usbMeta = document.getElementById('usbMeta');
-      if (successBar) {
-        if (usbFileName) usbFileName.textContent = file.name;
+
+      if (uploadHero) {
+        uploadHero.style.transition = 'opacity 0.35s';
+        uploadHero.style.opacity = '0';
+        setTimeout(() => { uploadHero.style.display = 'none'; }, 360);
+      }
+      if (resultSection) {
+        resultSection.style.display = 'block';
         const irrelCount2 = (result.irrelevantKeywords || []).length;
         const negCount2 = result.negativeList?.length || 0;
-        if (usbMeta) usbMeta.textContent = `共 ${result.totalRows} 条数据 · ${irrelCount2} 个非强相关词 · ${negCount2} 个否词候选`;
-        successBar.style.display = 'flex';
+        if (usbMeta) usbMeta.textContent = `共 ${result.totalRows} 条 · ${irrelCount2} 个非强相关词 · ${negCount2} 个否词候选`;
       }
-
-      // 上传成功后隐藏 hero 和上传卡片，界面更简洁
-      const uploadHero = document.getElementById('uploadHero');
-      const uploadCard = document.getElementById('uploadCard');
-      if (uploadHero) { uploadHero.style.transition = 'opacity 0.4s'; uploadHero.style.opacity = '0'; setTimeout(() => uploadHero.style.display = 'none', 420); }
-      if (uploadCard) { uploadCard.style.transition = 'opacity 0.4s'; uploadCard.style.opacity = '0'; setTimeout(() => uploadCard.style.display = 'none', 420); }
 
       // 渲染广告活动分组
       renderCampaigns(result.campaigns || []);
@@ -143,6 +141,9 @@
 
       // 填充图表/洞察筛选下拉
       fillCampaignDropdowns(result.campaigns || []);
+
+      // 渲染首页内嵌图表
+      renderHomeCharts(result, '');
 
       // 否词计数
       const negCount = result.negativeList?.length || 0;
@@ -174,7 +175,7 @@
 
   // ---- 填充广告活动下拉（图表 + 洞察 + 亏损商品）----
   function fillCampaignDropdowns(campaigns) {
-    const selectors = ['#chartFilterCampaign', '#insightFilterCampaign', '#insightIrrelFilterCampaign', '#losingFilterCampaign'];
+    const selectors = ['#chartFilterCampaign', '#insightFilterCampaign', '#insightIrrelFilterCampaign', '#losingFilterCampaign', '#homeChartFilterCampaign'];
     selectors.forEach(sel => {
       const el = document.querySelector(sel);
       if (!el) return;
@@ -188,10 +189,135 @@
     });
   }
 
+  // ---- 首页内嵌图表渲染 ----
+  function renderHomeCharts(data, campaignId) {
+    const section = document.getElementById('homeChartsSection');
+    if (!section || !data) return;
+    section.style.display = 'block';
+
+    let chartData = data;
+    if (campaignId) {
+      const camp = (data.campaigns || []).find(c => c.id === campaignId);
+      if (camp) {
+        chartData = {
+          summary: camp.summary || {},
+          losingProducts: camp.losingProducts || []
+        };
+      }
+    }
+
+    function getOrInitHome(id) {
+      const el = document.getElementById(id);
+      if (!el) return null;
+      let inst = echarts.getInstanceByDom(el);
+      if (!inst) inst = echarts.init(el, null, { renderer: 'canvas' });
+      return inst;
+    }
+
+    const THEME = {
+      blue: '#3B82F6', green: '#10B981', red: '#EF4444',
+      orange: '#F59E0B', purple: '#6366F1',
+      text: '#9CA3AF', textDark: '#374151', border: '#E5E7EB',
+      bg: '#FFFFFF'
+    };
+    function baseOpt() {
+      return {
+        backgroundColor: THEME.bg,
+        tooltip: { trigger: 'item', backgroundColor: '#1F2937', borderColor: '#374151', textStyle: { color: '#F9FAFB', fontSize: 12 } },
+        legend: { textStyle: { color: THEME.textDark, fontSize: 11 }, bottom: 0 }
+      };
+    }
+
+    // 广告花费 vs 销售额（饼图）
+    const spendSalesChart = getOrInitHome('home-chart-spend-sales');
+    if (spendSalesChart) {
+      const summary = chartData.summary || {};
+      const adSpend = summary.totalSpend || 0;
+      const salesAmt = summary.totalSalesAmt || 0;
+      const netProfit = Math.max(0, salesAmt - adSpend);
+      const pieData = [
+        { value: adSpend,   name: '广告花费',   itemStyle: { color: THEME.red } },
+        { value: netProfit, name: '广告净收益', itemStyle: { color: THEME.green } }
+      ].filter(d => d.value > 0);
+
+      if (pieData.length === 0) {
+        spendSalesChart.setOption({ ...baseOpt(), title: { text: '暂无花费数据', left: 'center', top: 'center', textStyle: { color: THEME.text, fontSize: 13 } } });
+      } else {
+        spendSalesChart.setOption({
+          ...baseOpt(),
+          tooltip: { ...baseOpt().tooltip, trigger: 'item', formatter: p => `${p.name}: ${p.value.toLocaleString('ko-KR')}₩ (${p.percent}%)` },
+          legend: { ...baseOpt().legend, orient: 'vertical', right: '5%', top: 'center' },
+          series: [{
+            type: 'pie', radius: ['44%', '70%'], center: ['38%', '46%'],
+            data: pieData,
+            label: { color: THEME.textDark, fontSize: 11 },
+            emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(0,0,0,0.12)' } },
+            animationType: 'scale', animationEasing: 'elasticOut'
+          }]
+        });
+      }
+    }
+
+    // 商品亏损分析（柱状图）
+    const losingChart = getOrInitHome('home-chart-losing');
+    if (losingChart) {
+      const losingProducts = chartData.losingProducts || [];
+      if (!losingProducts || losingProducts.length === 0) {
+        losingChart.setOption({ ...baseOpt(), title: { text: '无商品广告数据', left: 'center', top: 'center', textStyle: { color: THEME.text, fontSize: 13 } } });
+      } else {
+        const top = [...losingProducts].sort((a, b) => b.totalSpend - a.totalSpend).slice(0, 12);
+        function truncate(s, n) { return s && s.length > n ? s.slice(0, n) + '…' : (s || ''); }
+        const names  = top.map(p => truncate(p.productName, 8));
+        const spends = top.map(p => p.totalSpend);
+        const sales  = top.map(p => p.totalSalesAmt);
+
+        losingChart.setOption({
+          ...baseOpt(),
+          tooltip: {
+            ...baseOpt().tooltip, trigger: 'axis', axisPointer: { type: 'shadow' },
+            formatter: params => {
+              const p = top[params[0].dataIndex];
+              const isLosing = p.isLosing ? ' ⚠️ 亏损' : ' ✅ 盈利';
+              return `<b>${p.productName}</b>${isLosing}<br/>花费: <b>${p.totalSpend.toLocaleString('ko-KR')}₩</b><br/>销售额: <b>${p.totalSalesAmt.toLocaleString('ko-KR')}₩</b><br/>ROAS: <b>${p.roas}%</b>`;
+            }
+          },
+          legend: { ...baseOpt().legend, top: 0, data: ['广告花费', '广告销售额'] },
+          grid: { top: 36, right: 12, bottom: 70, left: 60 },
+          xAxis: {
+            type: 'category', data: names,
+            axisLine: { lineStyle: { color: THEME.border } },
+            axisLabel: { color: THEME.text, rotate: 30, fontSize: 10, interval: 0 }
+          },
+          yAxis: {
+            type: 'value', name: '金额(₩)',
+            nameTextStyle: { color: THEME.text, fontSize: 10 },
+            axisLine: { show: false },
+            splitLine: { lineStyle: { color: THEME.border, type: 'dashed' } },
+            axisLabel: {
+              color: THEME.text, fontSize: 10,
+              formatter: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v
+            }
+          },
+          series: [
+            {
+              name: '广告花费', type: 'bar', barMaxWidth: 32,
+              data: spends.map((v, i) => ({ value: v, itemStyle: { color: top[i].isLosing ? THEME.red : THEME.blue, borderRadius: [4,4,0,0] } }))
+            },
+            {
+              name: '广告销售额', type: 'bar', barMaxWidth: 32,
+              data: sales.map(v => ({ value: v, itemStyle: { color: THEME.green, borderRadius: [4,4,0,0] } }))
+            }
+          ]
+        });
+      }
+    }
+  }
+
   // ---- 渲染统计卡片 ----
   function renderStats(summary) {
     if (!summary) return;
     animateNumber('stat-total', summary.total, 0);
+    animateNumber('stat-super-efficient', summary.super_efficient || 0, 0);
     animateNumber('stat-efficient', summary.efficient, 0);
     animateNumber('stat-invalid', summary.invalid, 0);
     animateNumber('stat-meaningless', summary.meaningless, 0);
@@ -201,10 +327,10 @@
     document.getElementById('stat-ctr').textContent    = fmt(summary.overallCtr, 3) + '%';
     document.getElementById('stat-cvr').textContent    = fmt(summary.overallCvr, 2) + '%';
     document.getElementById('stat-cpc').textContent    = fmt(summary.overallCpc) + '₩';
-    // 新增特殊标记统计
-    const anomalyEl = document.getElementById('stat-anomaly');
+    // 特殊标记统计：转化异常词（specialMark === 'perfect'）
+    const perfectEl = document.getElementById('stat-perfect');
     const searchEl  = document.getElementById('stat-search-rate');
-    if (anomalyEl) anomalyEl.textContent = (summary.anomaly || 0) + ' 个';
+    if (perfectEl) perfectEl.textContent = (summary.perfect || 0) + ' 个';
     if (searchEl)  searchEl.textContent  = fmt(summary.searchOrderRate, 1) + '%';
   }
 
@@ -228,7 +354,7 @@
     const grid    = document.getElementById('campaignGrid');
     const badge   = document.getElementById('campaignCountBadge');
 
-    if (!campaigns || campaigns.length <= 1) {
+    if (!campaigns || campaigns.length === 0) {
       section.style.display = 'none';
       return;
     }
@@ -286,19 +412,12 @@
           ${irrelCount   > 0 ? `<span class="campaign-label-bar label-irrelevant">非强相关词 ${irrelCount}</span>` : ''}
         </div>
         <div class="campaign-card-actions">
-          <button class="campaign-view-btn" data-action="modal">查看明细</button>
           <button class="campaign-view-btn campaign-view-analysis-btn" data-action="analysis">数据分析 →</button>
         </div>
       </div>`;
     }).join('');
 
     grid.querySelectorAll('.campaign-card').forEach(card => {
-      // 点击"查看明细"
-      card.querySelector('[data-action="modal"]')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const idx = parseInt(card.dataset.campaignIdx);
-        openCampaignModal(campaigns[idx]);
-      });
       // 点击"数据分析 →"：跳转到数据分析页并筛选该活动
       card.querySelector('[data-action="analysis"]')?.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1135,28 +1254,41 @@
     function doReupload() {
       document.getElementById('dropZone').style.display = 'block';
       document.getElementById('uploadProgress').style.display = 'none';
-      document.getElementById('statsRow').style.display = 'none';
       document.getElementById('actionRow').style.display = 'none';
       document.body.classList.remove('has-action-bar');
       document.getElementById('campaignSection').style.display = 'none';
-      const successBar = document.getElementById('uploadSuccessBar');
-      if (successBar) successBar.style.display = 'none';
-      // 恢复 hero 和上传卡片
-      const uploadHero2 = document.getElementById('uploadHero');
-      const uploadCard2 = document.getElementById('uploadCard');
-      if (uploadHero2) { uploadHero2.style.display = ''; uploadHero2.style.opacity = '1'; }
-      if (uploadCard2) { uploadCard2.style.display = ''; uploadCard2.style.opacity = '1'; }
+      const homeCharts = document.getElementById('homeChartsSection');
+      if (homeCharts) homeCharts.style.display = 'none';
+      // 隐藏结果区，恢复配置区
+      const resultSection = document.getElementById('resultSection');
+      const uploadHero2   = document.getElementById('uploadHero');
+      if (resultSection) resultSection.style.display = 'none';
+      if (uploadHero2)   { uploadHero2.style.display = ''; uploadHero2.style.opacity = '1'; }
       G.data = null;
       G.aiSuggestions = {};
       G.chartCampaignFilter = '';
       setStatus('ready', '就绪');
     }
     document.getElementById('btnReupload')?.addEventListener('click', doReupload);
-    document.getElementById('btnReupload2')?.addEventListener('click', doReupload);
 
     // 导航
     document.querySelectorAll('.nav-item').forEach(item => {
       item.addEventListener('click', e => { e.preventDefault(); switchView(item.dataset.view); });
+    });
+
+    // 首页"转化异常词"卡片点击 → 跳转到数据分析并自动筛选
+    document.getElementById('statCardPerfect')?.addEventListener('click', () => {
+      if (!G.data) return;
+      switchView('analysis');
+      // 等表格渲染完成后再设置筛选
+      setTimeout(() => {
+        const filterLabel = document.getElementById('filterLabel');
+        if (filterLabel) {
+          filterLabel.value = 'perfect';
+          // 触发 table.js 里的 applyFilters
+          filterLabel.dispatchEvent(new Event('change'));
+        }
+      }, 150);
     });
 
     // 操作按钮
@@ -1226,7 +1358,8 @@
 
     // 统计卡片弹窗
     document.getElementById('statCardTotal')?.addEventListener('click', () => openStatDetail('', '全部关键词'));
-    document.getElementById('statCardEfficient')?.addEventListener('click', () => openStatDetail('efficient', '高效词列表'));
+    document.getElementById('statCardSuperEfficient')?.addEventListener('click', () => openStatDetail('super_efficient', '高效词列表'));
+    document.getElementById('statCardEfficient')?.addEventListener('click', () => openStatDetail('efficient', '有效词列表'));
     document.getElementById('statCardInvalid')?.addEventListener('click', () => openStatDetail('invalid', '无效词列表'));
     document.getElementById('statCardMeaningless')?.addEventListener('click', () => openStatDetail('meaningless', '无意义词列表'));
     document.getElementById('statDetailModalClose')?.addEventListener('click', closeStatDetail);
@@ -1252,6 +1385,11 @@
     // 刷新图表
     document.getElementById('btnRefreshCharts')?.addEventListener('click', () => {
       if (G.data) renderChartsWithFilter();
+    });
+
+    // 首页图表广告活动筛选
+    document.getElementById('homeChartFilterCampaign')?.addEventListener('change', e => {
+      if (G.data) renderHomeCharts(G.data, e.target.value);
     });
 
     // 亏损商品广告活动筛选
