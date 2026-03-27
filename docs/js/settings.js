@@ -114,28 +114,65 @@
     },
 
     _applyToUI(settings) {
+      // 表单回填（现已整合到上传页）
       const dsInput  = document.getElementById('key-deepseek');
       const dbInput  = document.getElementById('key-doubao');
       const modelSel = document.getElementById('modelSelect');
-
       if (dsInput)  dsInput.value  = settings.apiKeys?.deepseek || '';
       if (dbInput)  dbInput.value  = settings.apiKeys?.doubao   || '';
       if (modelSel) modelSel.value = settings.selectedModel || 'deepseek';
-    }
+
+      // 根据当前模型初始化 API Key 输入框显示状态
+      const currentModel = settings.selectedModel || 'deepseek';
+      setTimeout(() => window.updateApiKeyVisibility && window.updateApiKeyVisibility(currentModel), 0);
+
+      // 阈值表单回填
+      const th = settings.thresholds || {};
+      const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+      setVal('th-invalidSpendNoClick', th.invalidSpendNoClick || 1000);
+      setVal('th-invalidClickNoConv',  th.invalidClickNoConv  || 10);
+      setVal('th-invalidSpendNoOrder', th.invalidSpendNoOrder || 20000);
+      setVal('th-efficientRoas',       th.efficientRoas       || 500);
+      setVal('th-efficientCtr',        th.efficientCtr        || 0.3);
+      setVal('th-efficientCvr',        th.efficientCvr        || 3);
+    },
   };
 
   // ---- 事件绑定 ----
   document.addEventListener('DOMContentLoaded', () => {
     Settings.load();
 
+    // 保存按钮（上传页与设置页共用同一 ID）
     document.getElementById('btnSaveApiKeys')?.addEventListener('click', () => Settings.saveApiKeys());
     document.getElementById('btnSaveThresholds')?.addEventListener('click', () => Settings.saveThresholds());
+
+    // 模型下拉切换：只显示对应的 API Key 输入框
+    document.getElementById('modelSelect')?.addEventListener('change', (e) => {
+      window.updateApiKeyVisibility && window.updateApiKeyVisibility(e.target.value);
+    });
   });
 
   // ---- 全局：切换 Key 可见性 ----
   window.toggleKeyVisibility = function(model) {
     const input = document.getElementById('key-' + model);
     if (input) input.type = input.type === 'password' ? 'text' : 'password';
+  };
+
+  // ---- 根据选择的模型显示/隐藏对应 API Key 输入框 ----
+  window.updateApiKeyVisibility = function(selectedModel) {
+    const dsBlock = document.getElementById('apiKeyDeepseek');
+    const dbBlock = document.getElementById('apiKeyDoubao');
+    const apiRow  = document.querySelector('.api-key-row-2');
+
+    if (selectedModel === 'deepseek') {
+      if (dsBlock) dsBlock.style.display = 'block';
+      if (dbBlock) dbBlock.style.display = 'none';
+      if (apiRow) apiRow.style.gridTemplateColumns = '1fr';
+    } else {
+      if (dsBlock) dsBlock.style.display = 'none';
+      if (dbBlock) dbBlock.style.display = 'block';
+      if (apiRow) apiRow.style.gridTemplateColumns = '1fr';
+    }
   };
 
 })();
